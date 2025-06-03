@@ -43,6 +43,14 @@ export default defineConfig(({ mode }) => {
           host: 'localhost'
         }
       },
-      publicDir: false
+      publicDir: false,
+      plugins: [
+        {
+          name: 'html-transform',
+          transformIndexHtml(html) {
+            return html.replace(/src="\//g, 'src="' + process.env.NODE_ENV === 'production' ? '/mitchy-quest/' : '/');
+          }
+        }
+      ]
     };
 });
