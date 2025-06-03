@@ -1,0 +1,20 @@
+{
+  "node_modules/@google/genai/dist/web/index.mjs": {
+    "file": "assets/index-BrNVHU4M.js",
+    "name": "index",
+    "src": "node_modules/@google/genai/dist/web/index.mjs",
+    "isDynamicEntry": true
+  },
+  "src/index.tsx": {
+    "file": "assets/main-eoEAY9ah.js",
+    "name": "main",
+    "src": "src/index.tsx",
+    "isEntry": true,
+    "dynamicImports": [
+      "node_modules/@google/genai/dist/web/index.mjs"
+    ],
+    "css": [
+      "assets/main-cZAYU9_-.css"
+    ]
+  }
+}
