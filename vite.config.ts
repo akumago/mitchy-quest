@@ -42,6 +42,7 @@ export default defineConfig(({ mode }) => {
         hmr: {
           host: 'localhost'
         }
-      }
+      },
+      publicDir: false
     };
 });
