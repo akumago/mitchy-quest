@@ -15,7 +15,12 @@ export default defineConfig(({ mode }) => {
           }
         },
         manifest: true,
-        emptyOutDir: true
+        emptyOutDir: true,
+        output: {
+          entryFileNames: `assets/[name].js`,
+          chunkFileNames: `assets/[name].js`,
+          assetFileNames: `assets/[name].[ext]`
+        }
       },
       css: {
         modules: {
