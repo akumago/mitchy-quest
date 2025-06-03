@@ -24,9 +24,14 @@ jobs:
         run: npm run build
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
+          force_orphan: true
+          keep_history: false
+          clean: true
           commit_message: 'deploy: update GitHub Pages'
-          publish_branch: gh-pages
+          branch: gh-pages
+          domain: akumago.github.io
+          repository: akumago/mitchy-quest
