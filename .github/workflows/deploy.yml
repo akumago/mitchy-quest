@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -34,3 +36,6 @@ jobs:
           disable_nojekyll: true
           cname: akumago.github.io
           keep_files: true
+          clean: true
+          keep_history: false
+          domain: akumago.github.io
