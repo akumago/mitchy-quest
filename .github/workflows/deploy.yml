@@ -29,9 +29,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
           force_orphan: true
-          keep_history: false
-          clean: true
           commit_message: 'deploy: update GitHub Pages'
-          branch: gh-pages
-          domain: akumago.github.io
-          repository: akumago/mitchy-quest
+          publish_branch: gh-pages
+          disable_nojekyll: true
+          cname: akumago.github.io
+          keep_files: true
