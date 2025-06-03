@@ -13,7 +13,9 @@ export default defineConfig(({ mode }) => {
           input: {
             main: './src/index.tsx'
           }
-        }
+        },
+        manifest: true,
+        emptyOutDir: true
       },
       css: {
         modules: {
