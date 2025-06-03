@@ -35,6 +35,13 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': process.cwd() + '/src'
         }
+      },
+      server: {
+        port: 3000,
+        strictPort: true,
+        hmr: {
+          host: 'localhost'
+        }
       }
     };
 });
