@@ -8,7 +8,6 @@ export default defineConfig(({ mode }) => {
         outDir: 'dist',
         assetsDir: 'assets',
         sourcemap: true,
-        cssCodeSplit: true,
         rollupOptions: {
           input: {
             main: './src/index.tsx'
