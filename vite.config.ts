@@ -33,7 +33,7 @@ export default defineConfig(({ mode }) => {
       },
       resolve: {
         alias: {
-          '@': '/src'
+          '@': process.cwd() + '/src'
         }
       }
     };
