@@ -3,7 +3,7 @@ import { defineConfig, loadEnv } from 'vite';
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
-      base: process.env.NODE_ENV === 'production' ? '/mitchy-quest/' : '/',
+      base: process.env.NODE_ENV === 'production' ? '.' : '/',
       build: {
         outDir: 'dist',
         assetsDir: 'assets',
@@ -48,7 +48,7 @@ export default defineConfig(({ mode }) => {
         {
           name: 'html-transform',
           transformIndexHtml(html) {
-            return html.replace(/src="\//g, 'src="' + process.env.NODE_ENV === 'production' ? '/mitchy-quest/' : '/');
+            return html.replace(/src="\//g, 'src="' + process.env.NODE_ENV === 'production' ? './' : '/');
           }
         }
       ]
