@@ -1,9 +1,72 @@
+import React, { useState, useCallback } from 'react';
+import { Player, PlayerClass, StatBoost, Item, Equipment, Region, CurrentRun, QuizQuestion, AppliedBuff, DebuffType, BuffType } from './types';
 
+interface AppProps {
+  className?: string;
+}
+
+// Define GamePhase locally since it's not exported from types.ts
+enum GamePhase {
+  TITLE = 'TITLE',
+  NEW_GAME = 'NEW_GAME',
+  CONTINUE = 'CONTINUE',
+  CHARACTER_CREATION = 'CHARACTER_CREATION',
+  MAP = 'MAP',
+  SHOP = 'SHOP',
+  GACHA = 'GACHA',
+  BATTLE = 'BATTLE',
+  QUIZ = 'QUIZ',
+  ENDING = 'ENDING',
+  CREDITS = 'CREDITS'
+}
+
+export const App: React.FC<AppProps> = ({ className = '' }) => {
+  const [gamePhase, setGamePhase] = useState<GamePhase>(GamePhase.TITLE);
+  const [player, setPlayer] = useState<Player>({
+    name: '',
+    playerClass: PlayerClass.HERO,
+    level: 1,
+    experience: 0,
+    gold: 0,
+    baseStats: {
+      maxHp: 100,
+      maxMp: 10,
+      attack: 10,
+      defense: 5,
+      speed: 5,
+      critRate: 5
+    },
+    currentHp: 100,
+    currentMp: 10,
+    equipment: {
+      weapon: null,
+      armor: null,
+      shield: null
+    },
+    inventory: [],
+    persistentSkills: [],
+    collectedWisdomIds: [],
+    temporarySkills: [],
+    temporaryStatBoosts: {},
+    activeBuffs: [],
+    usedOncePerBattleSkills: []
+  const [regions, setRegions] = useState<Record<string, Region>>(() => JSON.parse(JSON.stringify(REGIONS)));
+  const [currentRun, setCurrentRun] = useState<CurrentRun | null>(null);
+  const [modalMessage, setModalMessage] = useState<string | null>(null);
+  const [isTitleMusicPlaying, setIsTitleMusicPlaying] = useState(false);
+  const [wisdomFragments, setWisdomFragments] = useState<Record<string, boolean>>(() => {
+    const initialFragments: Record<string, boolean> = {};
+    ALL_WISDOM_FRAGMENTS.forEach((fragment: { id: string }) => {
+      initialFragments[fragment.id] = false;
+    });
+    return initialFragments;
+  });
+
+  const renderGamePhase = useCallback(() => {
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GamePhase, Player, PlayerClass, SkillCardOption, StatBoost, Item, Equipment, Region, CurrentRun, Enemy, QuizQuestion, AppliedBuff, DebuffType, BuffType } from './types';
 import { TitleScreen } from './components/TitleScreen';
 import { NameInputScreen } from './components/NameInputScreen';
-// import { ClassSelectionScreen } from './components/ClassSelectionScreen'; // Removed
 import { WorldMapScreen } from './components/WorldMapScreen';
 import { BattleScreen } from './components/BattleScreen';
 import { SkillCardSelectionScreen } from './components/SkillCardSelectionScreen';
@@ -12,12 +75,12 @@ import { StatusScreen } from './components/StatusScreen';
 import { ShopScreen } from './components/ShopScreen';
 import { GachaScreen } from './components/GachaScreen';
 import { PasswordManagementScreen } from './components/PasswordManagementScreen';
-import { WisdomBagScreen } from './components/WisdomBagScreen'; 
-import { MitchyQuizScreen } from './components/MitchyQuizScreen'; // Added
+import { WisdomBagScreen } from './components/WisdomBagScreen';
+import { MitchyQuizScreen } from './components/MitchyQuizScreen';
 import { Modal } from './components/Modal';
-import { FinalBossPreDialogueScreen } from './components/FinalBossPreDialogueScreen'; 
-import { EndingMessageScreen } from './components/EndingMessageScreen'; 
-import { CreditsRollScreen } from './components/CreditsRollScreen'; 
+import { FinalBossPreDialogueScreen } from './components/FinalBossPreDialogueScreen';
+import { EndingMessageScreen } from './components/EndingMessageScreen';
+import { CreditsRollScreen } from './components/CreditsRollScreen';
 import { 
     createInitialPlayer, saveGame, loadGame, deleteSave, 
     checkLevelUp, calculateEffectiveStats, getEnemiesForEncounter, 
@@ -39,33 +102,267 @@ import {
 import { playSfx, SFX_FILES, ensureAudioContext, BGM_FILES, getMasterBgmVolume } from './services/audioService';
 import { updateActiveEffects } from './services/combatService';
 
-
-interface CurrentQuizParams {
-  questions: QuizQuestion[];
-  completionFlagId: string;
-  wisdomFragmentForRewardId: string;
+interface AppProps {
+  className?: string;
 }
 
-const getMediaErrorMessage = (code: number | undefined): string => {
-  if (code === undefined) return '不明なメディアエラーコード';
-  switch (code) {
-    case MediaError.MEDIA_ERR_ABORTED:
-      return '読み込みが中止されました (Code 1)';
-    case MediaError.MEDIA_ERR_NETWORK:
-      return 'ネットワークエラーで読み込みに失敗しました (Code 2)';
-    case MediaError.MEDIA_ERR_DECODE:
-      return 'メディアのデコードに失敗しました (Code 3)';
-    case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-      return 'メディアソースがサポートされていないか、見つかりません (Code 4)';
-    default:
-      return `不明なエラーコード: ${code}`;
-  }
+interface Region {
+  id: string;
+  name: string;
+  description: string;
+  encounters: string[][];
+  bossId: string;
+  shopInventoryIds: string[];
+  gachaPrizeIds: string[];
+  isUnlocked: boolean;
+  isCleared: boolean;
+  battleBackgroundUrl?: string;
+  bossUnlockLevel?: number;
+  unlockPlayerLevel?: number;
+}
+
+interface CurrentRun {
+  player: Player;
+  currentRegionId: string;
+  currentEncounterIndex: number;
+  xpGainedThisRun: number;
+  goldGainedThisRun: number;
+}
+
+interface ScreenProps {
+  onNext?: () => void;
+  onBack?: () => void;
+  player: Player;
+  regions: Record<string, Region>;
+  currentRun: CurrentRun | null;
+  gamePhase: GamePhase;
+  setGamePhase: (phase: GamePhase) => void;
+  setPlayer: (player: Player) => void;
+  setRegions: (regions: Record<string, Region>) => void;
+  setCurrentRun: (run: CurrentRun | null) => void;
+  modalMessage: string | null;
+  setModalMessage: (message: string | null) => void;
+  wisdomFragments: Record<string, boolean>;
+  setWisdomFragments: (fragments: Record<string, boolean>) => void;
+}
+
+export const App: React.FC<AppProps> = ({ className = '' }) => {
+  const [gamePhase, setGamePhase] = useState<GamePhase>(GamePhase.TITLE);
+  const [player, setPlayer] = useState<Player>(createInitialPlayer());
+  const [regions, setRegions] = useState<Record<string, Region>>({
+    'region1': {
+      id: 'region1',
+      name: '初心の森',
+      description: '冒険の始まりの地',
+      enemies: ['スライム', 'ゴブリン']
+    }
+  });
+  const [currentRun, setCurrentRun] = useState<CurrentRun | null>(null);
+  const [modalMessage, setModalMessage] = useState<string | null>(null);
+  const [wisdomFragments, setWisdomFragments] = useState<Record<string, boolean>>(() => {
+    const initialFragments: Record<string, boolean> = {};
+    ['fragment1', 'fragment2', 'fragment3'].forEach((fragmentId) => {
+      initialFragments[fragmentId] = false;
+    });
+    return initialFragments;
+  });
+
+  const handleAttemptRegionSelect = useCallback((regionId: string) => {
+    const region = regions[regionId];
+    if (region) {
+      const newRun: CurrentRun = {
+        regionId,
+        regionName: region.name,
+        enemies: [] // 実際の敵データを取得する関数を実装する必要があります
+      };
+      setCurrentRun(newRun);
+      setGamePhase(GamePhase.PREPARATION);
+    }
+  }, [regions]);
+
+  const handleBattleEnd = useCallback((win: boolean, xpGained: number, goldGained: number) => {
+    if (win) {
+      const updatedPlayer = { ...player };
+      updatedPlayer.gold += goldGained;
+      
+      updatedPlayer.experience += xpGained;
+      const newLevel = Math.floor(updatedPlayer.experience / 100) + 1; // 簡易的なレベルアップ計算
+      if (newLevel > updatedPlayer.level) {
+        updatedPlayer.level = newLevel;
+        updatedPlayer.baseStats.maxHp += 10;
+        updatedPlayer.baseStats.maxMp += 5;
+        updatedPlayer.baseStats.attack += 2;
+        updatedPlayer.baseStats.defense += 2;
+        updatedPlayer.baseStats.speed += 1;
+        updatedPlayer.baseStats.critRate += 0.5;
+        
+        updatedPlayer.currentHp = updatedPlayer.baseStats.maxHp;
+        updatedPlayer.currentMp = updatedPlayer.baseStats.maxMp;
+      }
+      
+      setPlayer(updatedPlayer);
+      setGamePhase(GamePhase.WORLD_MAP);
+    } else {
+      setGamePhase(GamePhase.GAME_OVER);
+    }
+  }, [player]);
+
+  const handleSkillCardSelect = useCallback((card: SkillCardOption) => {
+    const updatedPlayer = { ...player };
+    updatedPlayer.persistentSkills.push(card);
+    setPlayer(updatedPlayer);
+    setGamePhase(GamePhase.WORLD_MAP);
+  }, [player]);
+
+  const handlePurchaseItem = useCallback((itemBase: Item) => {
+    const updatedPlayer = { ...player };
+    const item = createItemInstance(itemBase);
+    updatedPlayer.inventory.push(item);
+    updatedPlayer.gold -= itemBase.price;
+    setPlayer(updatedPlayer);
+  }, [player]);
+
+  const handleSellItem = useCallback((itemToSell: Item, indexInInventory?: number) => {
+    const updatedPlayer = { ...player };
+    if (indexInInventory !== undefined) {
+      updatedPlayer.inventory.splice(indexInInventory, 1);
+    }
+    updatedPlayer.gold += Math.floor(itemToSell.base.price * 0.8); // 80%で売却
+    setPlayer(updatedPlayer);
+  }, [player]);
+
+  const handleUseGacha = useCallback((cost: number, prizeBase: Item) => {
+    const updatedPlayer = { ...player };
+    updatedPlayer.gold -= cost;
+    const prize = createItemInstance(prizeBase);
+    updatedPlayer.inventory.push(prize);
+    setPlayer(updatedPlayer);
+  }, [player]);
+
+  const handleGameOverContinue = useCallback(() => {
+    setPlayer(createInitialPlayer());
+    setGamePhase(GamePhase.TITLE);
+  }, []);
+
+  const handlePasswordSave = useCallback((password: string) => {
+    saveGame(password, player, regions);
+    setModalMessage('セーブが完了しました！');
+  }, [player, regions]);
+
+  const handlePasswordLoad = useCallback((password: string) => {
+    try {
+      const loadedData = loadGame(password);
+      if (loadedData) {
+        setPlayer(loadedData.player);
+        setRegions(loadedData.regions);
+        setGamePhase(GamePhase.WORLD_MAP);
+      } else {
+        setModalMessage('パスワードが見つかりませんでした');
+      }
+    } catch (error) {
+      setModalMessage('パスワードの読み込みに失敗しました');
+    }
+  }, []);
+
+  const handleQuizComplete = useCallback((correctAnswers: number, totalQuestions: number) => {
+    if (correctAnswers >= QUIZ_MIN_CORRECT_FOR_REWARD) {
+      const updatedPlayer = { ...player };
+      // 報酬の処理
+      updatedPlayer.gold += 100;
+      setPlayer(updatedPlayer);
+      setGamePhase(GamePhase.WORLD_MAP);
+    } else {
+      setGamePhase(GamePhase.WORLD_MAP);
+    }
+  }, [player]);
+
+  const handleFinalBossDialogueComplete = useCallback(() => {
+    setGamePhase(GamePhase.BATTLE);
+  }, []);
+
+  const handleEndingProceedToCredits = useCallback(() => {
+    setGamePhase(GamePhase.CREDITS_ROLL);
+  }, []);
+
+  const handleCreditsEnd = useCallback(() => {
+    setGamePhase(GamePhase.TITLE);
+  }, []);
+
+  const renderGamePhase = useCallback(() => {
+    switch (gamePhase) {
+      case GamePhase.TITLE:
+        return <TitleScreen onNext={() => setGamePhase(GamePhase.NAME_INPUT)} />;
+      case GamePhase.NAME_INPUT:
+        return (
+          <NameInputScreen
+            onNext={(name: string) => {
+              const updatedPlayer = createInitialPlayer();
+              updatedPlayer.name = name;
+              setPlayer(updatedPlayer);
+              setGamePhase(GamePhase.WORLD_MAP);
+            }}
+          />
+        );
+      case GamePhase.WORLD_MAP:
+        return <WorldMapScreen player={player} regions={regions} onRegionSelect={handleAttemptRegionSelect} />;
+      case GamePhase.PREPARATION:
+        return <PreparationScreen player={player} regions={regions} currentRun={currentRun} />;
+      case GamePhase.BATTLE:
+        return <BattleScreen player={player} enemies={getEnemiesForEncounter(currentRun!)} onBattleEnd={handleBattleEnd} />;
+      case GamePhase.BATTLE_REWARD_SKILL_CARD:
+        return <SkillCardSelectionScreen player={player} onSkillCardSelect={handleSkillCardSelect} />;
+      case GamePhase.SHOP:
+        return <ShopScreen player={player} regions={regions} currentRun={currentRun} onPurchase={handlePurchaseItem} onSell={handleSellItem} />;
+      case GamePhase.GACHA:
+        return <GachaScreen player={player} onGacha={handleUseGacha} />;
+      case GamePhase.STATUS_SCREEN:
+        return <StatusScreen player={player} />;
+      case GamePhase.GAME_OVER:
+        return <GameOverScreen onContinue={handleGameOverContinue} />;
+      case GamePhase.PASSWORD_SAVE:
+        return <PasswordManagementScreen mode="save" player={player} regions={regions} onSave={handlePasswordSave} />;
+      case GamePhase.PASSWORD_LOAD:
+        return <PasswordManagementScreen mode="load" onLoad={handlePasswordLoad} />;
+      case GamePhase.WISDOM_BAG:
+        return <WisdomBagScreen player={player} wisdomFragments={wisdomFragments} />;
+      case GamePhase.MITCHY_QUIZ:
+        return <MitchyQuizScreen player={player} onNext={handleQuizComplete} />;
+      case GamePhase.FINAL_BOSS_PRE_DIALOGUE:
+        return <FinalBossPreDialogueScreen onNext={handleFinalBossDialogueComplete} />;
+      case GamePhase.ENDING_MESSAGE:
+        return <EndingMessageScreen onNext={handleEndingProceedToCredits} />;
+      case GamePhase.CREDITS_ROLL:
+        return <CreditsRollScreen onEnd={handleCreditsEnd} />;
+      default:
+        return <div>Unknown phase</div>;
+    }
+  }, [gamePhase, player, regions, currentRun, wisdomFragments]);
+
+  useEffect(() => {
+    handleStartTitleMusic();
+    return () => {
+      handleStopTitleMusic();
+    };
+  }, [handleStartTitleMusic, handleStopTitleMusic]);
+
+  return (
+    <div id="app-container" className={`h-full w-full bg-black text-white font-dq flex flex-col items-center justify-center overflow-hidden ${className}`}>
+      <div
+        id="game-viewport"
+        className="w-full h-full max-w-[405px] max-h-[720px] aspect-[9/16] bg-blue-950 shadow-2xl border-4 border-blue-800 rounded-lg relative transition-all duration-300 ease-in-out overflow-hidden"
+      >
+        {renderGamePhase()}
+      </div>
+      {modalMessage && (
+        <Modal isOpen={!!modalMessage} onClose={() => setModalMessage(null)} title="メッセージ">
+          <p className="text-shadow-dq whitespace-pre-wrap">{modalMessage}</p>
+        </Modal>
+      )}
+    </div>
+  );
 };
 
-
-export const App = (): React.ReactElement => { // Changed signature here
-  const [gamePhase, setGamePhase] = useState<GamePhase>(GamePhase.TITLE);
-  const [player, setPlayer] = useState<Player | null>(null); 
+// ... 既存の関数定義をここに 
   const [regions, setRegions] = useState<Record<string, Region>>(() => JSON.parse(JSON.stringify(REGIONS))); 
   const [currentRun, setCurrentRun] = useState<CurrentRun | null>(null);
   
@@ -124,8 +421,8 @@ export const App = (): React.ReactElement => { // Changed signature here
   const tryCollectWisdomFragment = useCallback((fragmentId: string, triggerPlayer: Player | null = player) => {
     if (!triggerPlayer) return;
     setPlayer(prevPlayer => {
-      if (!prevPlayer) return null;
-      let playerCopy = JSON.parse(JSON.stringify(prevPlayer)) as Player;
+      if (!prevPlayer) return prevPlayer;
+      const playerCopy = { ...prevPlayer };
       if (!playerCopy.collectedWisdomIds) {
         playerCopy.collectedWisdomIds = [];
       }
@@ -134,7 +431,7 @@ export const App = (): React.ReactElement => { // Changed signature here
         setModalMessage(prev => prev ? `${prev}\n\n【ミッチーの知恵を発見！】\n${fragmentText}` : `【ミッチーの知恵を発見！】\n${fragmentText}`);
         return checkForWisdomRewards(playerCopy);
       }
-      return prevPlayer; 
+      return playerCopy; 
     });
   }, [player, checkForWisdomRewards]);
 
@@ -504,7 +801,7 @@ export const App = (): React.ReactElement => { // Changed signature here
   
   const updateCurrentRunPlayerState = useCallback((updatedRunPlayer: Player) => {
     setCurrentRun(prevRun => {
-      if (!prevRun) return null;
+      if (!prevRun) return prevRun;
       return { ...prevRun, player: updatedRunPlayer };
     });
   }, []);
@@ -1101,13 +1398,15 @@ export const App = (): React.ReactElement => { // Changed signature here
   };
 
   return (
-    <div id="app-container" className="h-screen w-screen bg-black text-white font-dq flex flex-col items-center justify-center overflow-hidden">
+    <div id="app-container" className="h-full w-full bg-black text-white font-dq flex flex-col items-center justify-center overflow-hidden">
       <div 
         id="game-viewport" 
-        className="w-full h-full max-w-[405px] max-h-[720px] aspect-[9/16] bg-blue-950 shadow-2xl border-4 border-blue-800 rounded-lg overflow-hidden relative transition-all duration-300 ease-in-out"
+        className="w-full h-full max-w-[405px] max-h-[720px] aspect-[9/16] bg-blue-950 shadow-2xl border-4 border-blue-800 rounded-lg relative transition-all duration-300 ease-in-out overflow-hidden"
       >
         {renderGamePhase()}
       </div>
+    </div>
+  );
       {modalMessage && (
         <Modal isOpen={!!modalMessage} onClose={() => setModalMessage(null)} title="メッセージ">
           <p className="text-shadow-dq whitespace-pre-wrap">{modalMessage}</p>

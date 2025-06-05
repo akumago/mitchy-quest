@@ -1,25 +1,17 @@
 import { defineConfig, loadEnv } from 'vite';
+import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
-      base: process.env.NODE_ENV === 'production' ? '.' : '/',
+      base: '/',
+      plugins: [react()],
       build: {
         outDir: 'dist',
         assetsDir: 'assets',
         sourcemap: true,
-        rollupOptions: {
-          input: {
-            main: './src/index.tsx'
-          }
-        },
         manifest: true,
-        emptyOutDir: true,
-        output: {
-          entryFileNames: `assets/[name]-[hash].js`,
-          chunkFileNames: `assets/[name]-[hash].js`,
-          assetFileNames: `assets/[name]-[hash].[ext]`
-        }
+        emptyOutDir: true
       },
       css: {
         modules: {
@@ -37,20 +29,16 @@ export default defineConfig(({ mode }) => {
         }
       },
       server: {
-        port: 3000,
+        port: 5173,
         strictPort: true,
         hmr: {
           host: 'localhost'
-        }
-      },
-      publicDir: false,
-      plugins: [
-        {
-          name: 'html-transform',
-          transformIndexHtml(html) {
-            return html.replace(/src="\//g, 'src="' + process.env.NODE_ENV === 'production' ? './' : '/');
-          }
-        }
-      ]
+        },
+        host: true,
+        watch: {
+          usePolling: true
+        },
+        open: true
+      }
     };
 });

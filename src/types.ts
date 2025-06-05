@@ -142,7 +142,14 @@ export interface Player {
   experience: number;
   gold: number;
   
-  baseStats: StatBoost; 
+  baseStats: {
+    maxHp: number;
+    maxMp: number;
+    attack: number;
+    defense: number;
+    speed: number;
+    critRate: number;
+  };
   currentHp: number;
   currentMp: number;
 
@@ -158,48 +165,6 @@ export interface Player {
   usedOncePerBattleSkills: string[]; // Tracks skills used once per battle
 }
 
-export interface EnemyResistances {
-  fire?: 'weak' | 'resist';
-  ice?: 'weak' | 'resist';
-  dark?: 'weak' | 'resist';
-}
-
-export interface AppliedDebuff {
-  skillId: string; // Skill that applied this
-  type: DebuffType;
-  remainingTurns: number;
-  value?: number; // e.g., accuracy reduction factor, defense reduction amount
-}
-
-export interface Enemy {
-  id:string;
-  name: string;
-  spriteUrl: string;
-  stats: {
-    maxHp: number;
-    currentHp: number;
-    maxMp: number; 
-    currentMp: number; 
-    attack: number;
-    defense: number;
-    speed: number;
-    critRate?: number; // Added optional critRate for enemies
-    goldYield: number;
-    expYield: number;
-  };
-  skills: Skill[]; 
-  aiBehavior: "こうげきてき" | "ぼうぎょてき" | "こんごう";
-  isGeneratingSprite?: boolean; 
-  hasGeneratedSprite?: boolean; 
-  isVideoSprite?: boolean; 
-  resistances?: EnemyResistances; 
-  activeDebuffs: AppliedDebuff[]; // Added for enemy debuffs
-}
-
-export type SkillCardOption = 
-  | { type: "NEW_SKILL"; skill: Skill }
-  | { type: "STAT_BOOST"; boost: StatBoost; description: string };
-
 export interface Region {
   id: string;
   name: string;
@@ -213,36 +178,6 @@ export interface Region {
   battleBackgroundUrl?: string; 
   bossUnlockLevel?: number;
   unlockPlayerLevel?: number; 
-}
-
-export enum GamePhase {
-  TITLE = "TITLE",
-  NAME_INPUT = "NAME_INPUT",
-  BOSS_CONFIRMATION = "BOSS_CONFIRMATION", 
-  WORLD_MAP = "WORLD_MAP", 
-  PREPARATION = "PREPARATION", 
-  BATTLE = "BATTLE",
-  BATTLE_REWARD_SKILL_CARD = "BATTLE_REWARD_SKILL_CARD",
-  SHOP = "SHOP",
-  GACHA = "GACHA",
-  STATUS_SCREEN = "STATUS_SCREEN",
-  GAME_OVER = "GAME_OVER",
-  PASSWORD_SAVE = "PASSWORD_SAVE",
-  PASSWORD_LOAD = "PASSWORD_LOAD",
-  WISDOM_BAG = "WISDOM_BAG", 
-  MITCHY_QUIZ = "MITCHY_QUIZ", 
-  FINAL_BOSS_PRE_DIALOGUE = "FINAL_BOSS_PRE_DIALOGUE", 
-  ENDING_MESSAGE = "ENDING_MESSAGE", 
-  CREDITS_ROLL = "CREDITS_ROLL", 
-}
-
-export interface BattleState {
-  enemies: Enemy[];
-  playerTurn: boolean;
-  log: string[];
-  selectedSkill: Skill | null;
-  selectedItem: Item | null;
-  showTargetSelection: boolean; 
 }
 
 export interface CurrentRun {

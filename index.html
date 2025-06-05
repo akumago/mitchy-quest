@@ -1,7 +1,19 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <base href="."></base>
+  <script type="importmap">
+    {
+      "imports": {
+        "react/": "https://esm.sh/react@^19.1.0/",
+        "react": "https://esm.sh/react@^19.1.0",
+        "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+        "react-dom": "https://esm.sh/react-dom@^19.1.0",
+        "@google/genai": "https://esm.sh/@google/genai@^1.0.1"
+      }
+    }
+  </script>
+  <script type="module" src="@vite/client"></script>
+  <base href="/">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ミッチークエスト ～失われし初心を取り戻せ！～</title>
@@ -137,22 +149,11 @@
       z-index: 1; /* Ensure it's above the button text if needed, though usually not */
     }
   </style>
-<script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.1.0/",
-    "react": "https://esm.sh/react@^19.1.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
-    "react-dom": "https://esm.sh/react-dom@^19.1.0",
-    "@google/genai": "https://esm.sh/@google/genai@^1.0.1"
-  }
-}
-</script>
-<script type="module" src="/mitchy-quest/assets/main-Ddhe4UjH.js"></script>
 </head>
-<body class="flex items-center justify-center min-h-screen bg-black">
+<body class="h-screen w-screen bg-black overflow-hidden">
   <div id="root">
     <!-- React App mounts here -->
   </div>
+  <script type="module" src="/src/index.tsx"></script>
 </body>
 </html>
